@@ -1,3 +1,10 @@
+# доработать выгрузку продаж в БД, чтобы выгрузка осуществлялась со всех листов
+# книги эксель.
+
+
+
+
+
 from openpyxl import load_workbook
 from datetime import datetime
 import pyodbc
@@ -37,19 +44,13 @@ def convert_rate_plan(rate_plan_name):
 def get_shop_id(shop_name_excel):
     temp = 'SELECT ShopID FROM Shops WHERE NameInExcel = ' + '\'' + str(shop_name_excel) + '\''
     cursor.execute(temp)
-    print('get_shop_id:')
-    # print(cursor.fetchall()[0][0])
+    # print('get_shop_id:')
     a = cursor.fetchone()[0]
-    # for i in a:
-    #     print(i)
 
     if a is None:
         return 999
     else:
         return a
-
-
-
 
 
 def load_sim_obtaining():
@@ -101,20 +102,27 @@ def main():
             load_file()
             for sheet in wb_sheets:
                 counter = 2
-                while sheet['D' + str(counter)].value != None:
+                while sheet['D' + str(counter)].value is not None:
                     icc = sheet['D' + str(counter)].value
-                    print(icc)
+                    # print(icc)
                     shop_name_excel = sheet['F' + str(counter)].value
-                    print(shop_name_excel)
-                    transfer_date = sheet['G' + str(counter)].value
-                    print(transfer_date)
+                    # print(shop_name_excel)
 
-                    shop_id = get_shop_id(shop_name_excel)
-                    temp = 'INSERT INTO SimSales(ICC, ShopID, TransferDate) VALUES(' + '\'' + str(
-                        icc) + '\'' + ', ' + '\'' + str(shop_id) + '\'' + ', ' + '\'' + str(transfer_date) + '\'' + ')'
-                    print(temp)
-                    cursor.execute(temp)
-                    counter += 1
+                    if shop_name_excel is not None:
+                        transfer_date = sheet['G' + str(counter)].value
+                        # print(transfer_date)
+                        shop_id = get_shop_id(shop_name_excel)
+                        temp = 'INSERT INTO SimSales(ICC, ShopID, TransferDate) VALUES(' + '\'' + str(
+                            icc) + '\'' + ', ' + '\'' + str(shop_id) + '\'' + ', ' + '\'' + str(
+                            transfer_date) + '\'' + ')'
+                        # print(temp)
+                        cursor.execute(temp)
+                        counter += 1
+
+                    else:
+                        print(icc + ' еще не отгружена')
+                        counter += 1
+
             answer = int(input(menu))
 
 

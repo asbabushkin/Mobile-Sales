@@ -1,5 +1,5 @@
 from openpyxl import load_workbook
-from datetime import date
+from datetime import datetime
 import pyodbc
 
 server = 'DESKTOP-8QOVB79\SQLEXPRESS'  # имя сервера берем из бд (соединить...)
@@ -49,8 +49,8 @@ def get_shop_id(shop_name_excel):
         return a
 
 
-# доделать проверку на наличие серийника в бд.
-# В эксель при переносе данных в бд указывать не "да", а дату переноса
+
+
 
 def load_sim_obtaining():
     print('Внесение прихода сим-карт в БД.')
@@ -59,9 +59,12 @@ def load_sim_obtaining():
         print(sheet)
         counter = 2
         while sheet['A' + str(counter)].value != None:
-            if sheet['H' + str(counter)].value != 'Да':
-                icc = sheet['A' + str(counter)].value
-                icc = icc.replace(' ', '')
+            icc = sheet['A' + str(counter)].value
+            icc = icc.replace(' ', '')
+            temp = 'SELECT ICC FROM SimProvision WHERE ICC = ' + '\'' + icc + '\''
+            cursor.execute(temp)
+            a = cursor.fetchone()
+            if a is None:
                 operator_id = get_operator_id(sheet['C' + str(counter)].value)
                 rate_plan_id = convert_rate_plan(sheet['D' + str(counter)].value)
                 cost = sheet['E' + str(counter)].value
@@ -72,13 +75,13 @@ def load_sim_obtaining():
                     operator_id) + '\'' + ',' + '\'' + str(rate_plan_id) + '\'' + ',' + '\'' + str(
                     cost) + '\'' + ',' + '\'' + str(receive_date) + '\'' + ',' + '\'' + str(extra_mark) + '\'' + ')'
                 cursor.execute(a)
-                sheet['H' + str(counter)].value = 'Да'
+                sheet['H' + str(counter)].value = datetime.now()
                 counter += 1
             else:
-                print(sheet['A' + str(counter)].value + 'уже содержится в БД')
+                print(icc + ' содержится в БД')
                 counter += 1
     wb.save(file_name)
-    return None
+    return True
 
 
 def load_sim_sales():
@@ -92,30 +95,6 @@ def main():
     while answer != 0:
         if answer == 1:
             load_sim_obtaining()
-            # print('Внесение прихода сим-карт в БД.')
-            # load_file()
-            # for sheet in wb_sheets:
-            #     print(sheet)
-            #     counter = 2
-            #     while sheet['A' + str(counter)].value != None:
-            #         if sheet['H' + str(counter)].value != 'Да':
-            #             icc = sheet['A' + str(counter)].value
-            #             operator_id = get_operator_id(sheet['C' + str(counter)].value)
-            #             rate_plan_id = convert_rate_plan(sheet['D' + str(counter)].value)
-            #             cost = sheet['E' + str(counter)].value
-            #             receive_date = sheet['F' + str(counter)].value
-            #             extra_mark = sheet['G' + str(counter)].value
-            #             a = 'INSERT INTO SimProvision(ICC, MSISDN, MobileOperatorID, RatePlanID, Cost, ReceiveDate, ExtraMark) VALUES(' + '\'' + str(
-            #                 icc) + '\'' + ',' + '\'' + '\'' + ',' + '\'' + str(
-            #                 operator_id) + '\'' + ',' + '\'' + str(rate_plan_id) + '\'' + ',' + '\'' + str(
-            #                 cost) + '\'' + ',' + '\'' + str(receive_date) + '\'' + ',' + '\'' + str(extra_mark) + '\'' + ')'
-            #             cursor.execute(a)
-            #             sheet['H' + str(counter)].value = 'Да'
-            #             counter += 1
-            #         else:
-            #             print(sheet['A' + str(counter)].value + 'уже содержится в БД')
-            #             counter += 1
-            # wb.save(file_name)
             answer = int(input(menu))
         elif answer == 2:
             print('Загрузка продаж сим в БД ')
